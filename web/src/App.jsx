@@ -36,7 +36,10 @@ import Token from './pages/Token';
 import Redemption from './pages/Redemption';
 import TopUp from './pages/TopUp';
 import Log from './pages/Log';
-import Chat from './pages/Chat';
+import ChatHistory from './pages/ChatHistory';
+import SensitiveRules from './pages/SensitiveRules';
+import SensitiveLogs from './pages/SensitiveLogs';
+import NewChatPage from './pages/Chat/NewChatPage';
 import Chat2Link from './pages/Chat2Link';
 import Midjourney from './pages/Midjourney';
 import Pricing from './pages/Pricing';
@@ -286,6 +289,30 @@ function App() {
           }
         />
         <Route
+          path='/console/chat-history'
+          element={
+            <PrivateRoute>
+              <ChatHistory />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/sensitive-rules'
+          element={
+            <AdminRoute>
+              <SensitiveRules />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path='/console/sensitive-logs'
+          element={
+            <AdminRoute>
+              <SensitiveLogs />
+            </AdminRoute>
+          }
+        />
+        <Route
           path='/console'
           element={
             <PrivateRoute>
@@ -361,9 +388,11 @@ function App() {
         <Route
           path='/console/chat/:id?'
           element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <Chat />
-            </Suspense>
+            <PrivateRoute>
+              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
+                <NewChatPage />
+              </Suspense>
+            </PrivateRoute>
           }
         />
         {/* 方便使用chat2link直接跳转聊天... */}

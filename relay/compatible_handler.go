@@ -179,6 +179,38 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		requestBody = bytes.NewBuffer(jsonData)
 	}
 
+	// ========== 敏感词检查 ==========
+	matchedWords := []string{}
+	filterAction := ""
+	if info.RelayMode == relayconstant.RelayModeChatCompletions {
+		matches, isBlocked := CheckSensitiveWords(c, info, request)
+		if isBlocked {
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("您的请求包含敏感内容,已被拦截"),
+				types.ErrorCodePromptBlocked,
+				http.StatusBadRequest,
+			)
+		}
+		if len(matches) > 0 {
+			for _, m := range matches {
+				matchedWords = append(matchedWords, m.MatchedText)
+			}
+			// 获取最高优先级的动作
+			for _, action := range []string{"block", "replace", "mask", "warn"} {
+				for _, m := range matches {
+					if m.Action == action {
+						filterAction = action
+						break
+					}
+				}
+				if filterAction != "" {
+					break
+				}
+			}
+		}
+	}
+	// ================================
+
 	var httpResp *http.Response
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
@@ -204,6 +236,12 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		service.ResetStatusCode(newApiErr, statusCodeMappingStr)
 		return newApiErr
 	}
+
+	// ========== 保存聊天记录 ==========
+	if info.RelayMode == relayconstant.RelayModeChatCompletions {
+		SaveChatHistoryAsync(c, info, request, usage, matchedWords, filterAction)
+	}
+	// ================================
 
 	var containAudioTokens = usage.(*dto.Usage).CompletionTokenDetails.AudioTokens > 0 || usage.(*dto.Usage).PromptTokensDetails.AudioTokens > 0
 	var containsAudioRatios = ratio_setting.ContainsAudioRatio(info.OriginModelName) || ratio_setting.ContainsAudioCompletionRatio(info.OriginModelName)

@@ -39,6 +39,9 @@ const routerMap = {
   user: '/console/user',
   subscription: '/console/subscription',
   log: '/console/log',
+  chatHistory: '/console/chat-history',
+  sensitiveRules: '/console/sensitive-rules',
+  sensitiveLogs: '/console/sensitive-logs',
   midjourney: '/console/midjourney',
   setting: '/console/setting',
   about: '/about',
@@ -49,6 +52,7 @@ const routerMap = {
   deployment: '/console/deployment',
   playground: '/console/playground',
   personal: '/console/personal',
+  newChat: '/console/chat',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -88,6 +92,23 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('使用日志'),
         itemKey: 'log',
         to: '/log',
+      },
+      {
+        text: t('聊天历史'),
+        itemKey: 'chatHistory',
+        to: '/chat-history',
+      },
+      {
+        text: t('敏感词规则'),
+        itemKey: 'sensitiveRules',
+        to: '/sensitive-rules',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('敏感词日志'),
+        itemKey: 'sensitiveLogs',
+        to: '/sensitive-logs',
+        className: isAdmin() ? '' : 'tableHiddle',
       },
       {
         text: t('绘图日志'),
@@ -206,6 +227,11 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('操练场'),
         itemKey: 'playground',
         to: '/playground',
+      },
+      {
+        text: t('新聊天'),
+        itemKey: 'newChat',
+        to: '/console/chat',
       },
       {
         text: t('聊天'),
@@ -514,7 +540,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
               />
             }
             onClick={toggleCollapsed}
-            icononly={collapsed}
+            iconOnly={collapsed}
             style={
               collapsed
                 ? { width: 36, height: 24, padding: 0 }

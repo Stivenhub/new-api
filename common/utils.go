@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -260,6 +261,30 @@ func GetRandomInt(max int) int {
 
 func GetTimestamp() int64 {
 	return time.Now().Unix()
+}
+
+// GetTodayStartTime 获取今天的开始时间(Unix时间戳)
+func GetTodayStartTime() int64 {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return today.Unix()
+}
+
+// GetWeekStartTime 获取本周的开始时间(周一)(Unix时间戳)
+func GetWeekStartTime() int64 {
+	now := time.Now()
+	weekday := int(now.Weekday())
+	if weekday == 0 {
+		weekday = 7 // 将周日设为7
+	}
+	weekStart := now.AddDate(0, 0, -(weekday - 1))
+	startOfDay := time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 0, 0, 0, 0, weekStart.Location())
+	return startOfDay.Unix()
+}
+
+// CompileRegex 编译正则表达式并返回错误
+func CompileRegex(pattern string) (*regexp.Regexp, error) {
+	return regexp.Compile(pattern)
 }
 
 func GetTimeString() string {

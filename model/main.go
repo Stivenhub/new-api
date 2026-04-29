@@ -213,7 +213,14 @@ func InitDB() (err error) {
 func InitLogDB() (err error) {
 	if os.Getenv("LOG_SQL_DSN") == "" {
 		LOG_DB = DB
-		return
+		if common.IsMasterNode {
+			common.SysLog("log database migration started (shared DB)")
+			err = migrateLOGDB()
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 	db, err := chooseDB("LOG_SQL_DSN", true)
 	if err == nil {
@@ -280,6 +287,9 @@ func migrateDB() error {
 		&SubscriptionPreConsumeRecord{},
 		&CustomOAuthProvider{},
 		&UserOAuthBinding{},
+		&ChatTopic{},      // 聊天话题
+		&ChatMessage{},    // 聊天消息
+		&SensitiveRule{},  // 敏感词规则
 	)
 	if err != nil {
 		return err
@@ -328,6 +338,9 @@ func migrateDBFast() error {
 		{&SubscriptionPreConsumeRecord{}, "SubscriptionPreConsumeRecord"},
 		{&CustomOAuthProvider{}, "CustomOAuthProvider"},
 		{&UserOAuthBinding{}, "UserOAuthBinding"},
+		{&ChatTopic{}, "ChatTopic"},
+		{&ChatMessage{}, "ChatMessage"},
+		{&SensitiveRule{}, "SensitiveRule"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))
@@ -368,6 +381,10 @@ func migrateDBFast() error {
 func migrateLOGDB() error {
 	var err error
 	if err = LOG_DB.AutoMigrate(&Log{}); err != nil {
+		return err
+	}
+	// 敏感词触发日志表(使用LOG_DB)
+	if err = LOG_DB.AutoMigrate(&SensitiveLog{}); err != nil {
 		return err
 	}
 	return nil

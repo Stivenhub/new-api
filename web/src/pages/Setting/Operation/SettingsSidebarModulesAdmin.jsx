@@ -43,6 +43,7 @@ export default function SettingsSidebarModulesAdmin(props) {
     chat: {
       enabled: true,
       playground: true,
+      newChat: true,
       chat: true,
     },
     console: {
@@ -50,6 +51,9 @@ export default function SettingsSidebarModulesAdmin(props) {
       detail: true,
       token: true,
       log: true,
+      chatHistory: true,
+      sensitiveRules: true,
+      sensitiveLogs: true,
       midjourney: true,
       task: true,
     },
@@ -111,6 +115,9 @@ export default function SettingsSidebarModulesAdmin(props) {
         detail: true,
         token: true,
         log: true,
+        chatHistory: true,
+        sensitiveRules: true,
+        sensitiveLogs: true,
         midjourney: true,
         task: true,
       },
@@ -216,6 +223,7 @@ export default function SettingsSidebarModulesAdmin(props) {
           title: t('操练场'),
           description: t('AI模型测试环境'),
         },
+        { key: 'newChat', title: t('新聊天'), description: t('新版聊天界面') },
         { key: 'chat', title: t('聊天'), description: t('聊天会话管理') },
       ],
     },
@@ -227,6 +235,17 @@ export default function SettingsSidebarModulesAdmin(props) {
         { key: 'detail', title: t('数据看板'), description: t('系统数据统计') },
         { key: 'token', title: t('令牌管理'), description: t('API令牌管理') },
         { key: 'log', title: t('使用日志'), description: t('API使用记录') },
+        { key: 'chatHistory', title: t('聊天历史'), description: t('聊天记录管理') },
+        {
+          key: 'sensitiveRules',
+          title: t('敏感词规则'),
+          description: t('敏感词过滤规则配置'),
+        },
+        {
+          key: 'sensitiveLogs',
+          title: t('敏感词日志'),
+          description: t('敏感词触发记录'),
+        },
         {
           key: 'midjourney',
           title: t('绘图日志'),

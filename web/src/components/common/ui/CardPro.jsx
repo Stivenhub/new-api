@@ -163,7 +163,7 @@ const CardPro = ({
       className={`table-scroll-card !rounded-2xl ${className}`}
       title={headerContent}
       footer={footerContent}
-      shadows={shadows}
+      shadows={shadows || undefined}
       bordered={bordered}
       style={style}
       {...props}

@@ -29,6 +29,7 @@ export const DEFAULT_ADMIN_CONFIG = {
   chat: {
     enabled: true,
     playground: true,
+    newChat: true,
     chat: true,
   },
   console: {
@@ -36,6 +37,9 @@ export const DEFAULT_ADMIN_CONFIG = {
     detail: true,
     token: true,
     log: true,
+    chatHistory: true,
+    sensitiveRules: true,
+    sensitiveLogs: true,
     midjourney: true,
     task: true,
   },

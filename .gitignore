@@ -31,3 +31,6 @@ data/
 .gopath
 
 token_estimator_test.go
+
+xm_docs
+xm_test_image

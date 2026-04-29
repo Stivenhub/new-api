@@ -260,6 +260,46 @@ func SetApiRouter(router *gin.Engine) {
 			tokenRoute.POST("/batch/keys", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.GetTokenKeysBatch)
 		}
 
+		// 聊天历史路由组
+		chatHistoryRoute := apiRouter.Group("/chat")
+		chatHistoryRoute.Use(middleware.UserAuth())
+		{
+			chatHistoryRoute.POST("/topics", controller.CreateTopic)
+			chatHistoryRoute.GET("/topics", controller.GetUserTopics)
+			chatHistoryRoute.GET("/topics/:id", controller.GetTopicDetail)
+			chatHistoryRoute.GET("/topics/:id/messages", controller.GetTopicMessages)
+			chatHistoryRoute.PUT("/topics/:id", controller.UpdateTopic)
+			chatHistoryRoute.DELETE("/topics/:id", controller.DeleteTopic)
+			chatHistoryRoute.GET("/topics/search", controller.SearchTopics)
+			chatHistoryRoute.GET("/topics/stats", controller.GetUserTopicStats)
+		}
+
+		// 敏感词规则路由组
+		sensitiveRuleRoute := apiRouter.Group("/sensitive-rules")
+		sensitiveRuleRoute.Use(middleware.UserAuth())
+		{
+			sensitiveRuleRoute.GET("", controller.GetRules)
+			sensitiveRuleRoute.GET("/:id", controller.GetRuleById)
+			sensitiveRuleRoute.POST("", controller.CreateRule)
+			sensitiveRuleRoute.PUT("/:id", controller.UpdateRule)
+			sensitiveRuleRoute.DELETE("/:id", controller.DeleteRule)
+			sensitiveRuleRoute.POST("/:id/toggle", controller.ToggleRuleStatus)
+			sensitiveRuleRoute.POST("/reload", controller.ReloadRules)
+			sensitiveRuleRoute.GET("/statistics", controller.GetRuleStatistics)
+		}
+
+		// 敏感词日志路由组
+		sensitiveLogRoute := apiRouter.Group("/sensitive-logs")
+		sensitiveLogRoute.Use(middleware.UserAuth())
+		{
+			sensitiveLogRoute.GET("", controller.GetSensitiveLogs)
+			sensitiveLogRoute.GET("/:id", controller.GetLogDetail)
+			sensitiveLogRoute.GET("/my-history", controller.GetMyHistory)
+			sensitiveLogRoute.GET("/statistics", controller.GetStatistics)
+			sensitiveLogRoute.POST("/clean", controller.CleanOldLogs) // 仅管理员
+			sensitiveLogRoute.GET("/export", controller.ExportLogs)
+		}
+
 		usageRoute := apiRouter.Group("/usage")
 		usageRoute.Use(middleware.CORS(), middleware.CriticalRateLimit())
 		{

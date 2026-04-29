@@ -1,6 +1,9 @@
 package setting
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 var CheckSensitiveEnabled = true
 var CheckSensitiveOnPromptEnabled = true
@@ -18,6 +21,11 @@ var StreamCacheQueueLength = 0
 var SensitiveWords = []string{
 	"test_sensitive",
 }
+
+// 新增:聊天历史和敏感词审计配置
+var EnableChatHistory = getEnvBool("ENABLE_CHAT_HISTORY", true)
+var EnableSensitiveCheck = getEnvBool("ENABLE_SENSITIVE_CHECK", true)
+var RecordSensitiveLog = getEnvBool("RECORD_SENSITIVE_LOG", true)
 
 func SensitiveWordsToString() string {
 	return strings.Join(SensitiveWords, "\n")
@@ -41,3 +49,12 @@ func ShouldCheckPromptSensitive() bool {
 //func ShouldCheckCompletionSensitive() bool {
 //	return CheckSensitiveEnabled && CheckSensitiveOnCompletionEnabled
 //}
+
+// getEnvBool 从环境变量获取布尔值
+func getEnvBool(key string, defaultVal bool) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+	return strings.ToLower(val) == "true" || val == "1"
+}

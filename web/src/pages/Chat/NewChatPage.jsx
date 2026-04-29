@@ -22,7 +22,7 @@ import { Layout, Button, Modal, Toast, Input, Typography, Empty, Spin } from '@d
 import { IconPlus, IconSearch } from '@douyinfe/semi-icons';
 import { MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getTopics, createTopic, deleteTopic, updateTopic, getTopicMessages } from '../../services/chatAndSensitive';
+import { getTopics, createTopic, deleteTopic, updateTopic, getTopicMessages, fetchUserModels, streamChatCompletion } from '../../services/chatAndSensitive';
 import TopicList from './components/TopicList';
 import ChatWindow from './components/ChatWindow';
 import './NewChatPage.css';
@@ -40,6 +40,9 @@ const NewChatPage = () => {
   const [loading, setLoading] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [currentTopicTitle, setCurrentTopicTitle] = useState('');
   
   // 编辑话题弹窗
   const [editTopicModalVisible, setEditTopicModalVisible] = useState(false);
@@ -52,7 +55,7 @@ const NewChatPage = () => {
       setTopicsLoading(true);
       const res = await getTopics(1, 100, 'last_message_at');
       if (res.data.success) {
-        setTopics(res.data.data || []);
+        setTopics(res.data.data?.topics || []);
       } else {
         Toast.error(res.data.message || t('加载话题列表失败'));
       }
@@ -75,7 +78,7 @@ const NewChatPage = () => {
       setLoading(true);
       const res = await getTopicMessages(topicId, 1, 100);
       if (res.data.success) {
-        const msgs = (res.data.data || []).map(msg => ({
+        const msgs = (res.data.data?.messages || []).map(msg => ({
           id: msg.id.toString(),
           role: msg.role,
           content: msg.response_content || msg.request_content || '',
@@ -98,6 +101,16 @@ const NewChatPage = () => {
     }
   }, [t]);
 
+  // 加载用户可用模型
+  useEffect(() => {
+    fetchUserModels().then((list) => {
+      if (list.length > 0) {
+        setModels(list);
+        setSelectedModel(list[0]);
+      }
+    });
+  }, []);
+
   // 初始化加载
   useEffect(() => {
     loadTopics();
@@ -106,6 +119,11 @@ const NewChatPage = () => {
   // 选择话题
   const handleSelectTopic = (topicId) => {
     setCurrentTopicId(topicId);
+    // 从话题列表中找到对应标题
+    const topic = topics.find(t => t.id === topicId);
+    if (topic) {
+      setCurrentTopicTitle(topic.title || '');
+    }
     loadTopicMessages(topicId);
   };
 
@@ -123,6 +141,7 @@ const NewChatPage = () => {
             // 如果删除的是当前话题，清空消息
             if (currentTopicId === topicId) {
               setCurrentTopicId(null);
+              setCurrentTopicTitle('');
               setMessages([]);
             }
             
@@ -163,6 +182,10 @@ const NewChatPage = () => {
         setEditingTopic(null);
         setEditTopicTitle('');
         await loadTopics();
+        // 如果编辑的是当前话题，同步更新标题
+        if (editingTopic?.id === currentTopicId) {
+          setCurrentTopicTitle(editTopicTitle);
+        }
       } else {
         Toast.error(res.data.message || t('更新失败'));
       }
@@ -172,7 +195,7 @@ const NewChatPage = () => {
     }
   };
 
-  // 发送消息 - 支持无话题自动创建
+  // 发送消息 - 支持无话题自动创建 + 流式 AI 回复
   const handleSendMessage = async (messageData) => {
     // messageData = { content: string, images: Array<{base64: string, type: string}> }
     let topicId = currentTopicId;
@@ -181,10 +204,11 @@ const NewChatPage = () => {
     if (!topicId) {
       try {
         const title = messageData.content.slice(0, 20) + (messageData.content.length > 20 ? '...' : '');
-        const res = await createTopic({ title, model_name: 'default' });
+        const res = await createTopic({ title, model_name: selectedModel || 'default' });
         if (res.data.success && res.data.data) {
           topicId = res.data.data.id;
           setCurrentTopicId(topicId);
+          setCurrentTopicTitle(res.data.data?.title || title);
           await loadTopics();
         } else {
           Toast.error(res.data.message || t('创建对话失败'));
@@ -197,6 +221,11 @@ const NewChatPage = () => {
       }
     }
 
+    if (!selectedModel) {
+      Toast.warning(t('请先选择一个模型'));
+      return;
+    }
+
     // 将用户消息立即添加到界面（乐观更新）
     const userMsg = {
       id: 'temp-' + Date.now(),
@@ -206,14 +235,58 @@ const NewChatPage = () => {
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
 
-    // TODO: 后续接入实际的 AI 回复 API
-    console.log('发送消息到话题:', topicId, messageData);
+    // 构建发送给 AI 的消息列表
+    const apiMessages = [];
+    // 从已有消息中取最近 20 条作为上下文
+    const recentMessages = messages.slice(-20);
+    for (const msg of recentMessages) {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        apiMessages.push({ role: msg.role, content: msg.content });
+      }
+    }
+    apiMessages.push({ role: 'user', content: messageData.content });
+
+    // 创建 AI 回复占位消息
+    const aiMsgId = 'ai-' + Date.now();
+    setMessages(prev => [...prev, {
+      id: aiMsgId,
+      role: 'assistant',
+      content: '',
+      created_at: new Date().toISOString(),
+    }]);
+
+    // 流式接收 AI 回复
+    let fullContent = '';
+    await streamChatCompletion({
+      model: selectedModel,
+      messages: apiMessages,
+      onMessage: (chunk) => {
+        fullContent += chunk;
+        setMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, content: fullContent } : m
+        ));
+      },
+      onError: (err) => {
+        console.error('AI 回复失败:', err);
+        setMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, content: fullContent || t('获取回复失败: ') + err } : m
+        ));
+        Toast.error(t('获取回复失败'));
+      },
+      onDone: () => {
+        setLoading(false);
+      },
+    });
+
+    setLoading(false);
   };
 
   // 新建对话 - 清空当前状态
   const handleNewConversation = () => {
     setCurrentTopicId(null);
+    setCurrentTopicTitle('');
     setMessages([]);
   };
 
@@ -226,7 +299,7 @@ const NewChatPage = () => {
 
   return (
     <div className="new-chat-page">
-      <Layout style={{ height: 'calc(100vh - 64px)', marginTop: '64px' }}>
+      <Layout className="chat-inner-layout">
         {/* 左侧话题列表 */}
         <Sider
           width={280}
@@ -294,10 +367,14 @@ const NewChatPage = () => {
         <Content className="chat-content">
           <ChatWindow
             topicId={currentTopicId}
+            currentTopicTitle={currentTopicTitle}
             messages={messages}
             loading={loading}
             onSendMessage={handleSendMessage}
             onRefreshMessages={() => currentTopicId && loadTopicMessages(currentTopicId)}
+            models={models}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
           />
         </Content>
       </Layout>

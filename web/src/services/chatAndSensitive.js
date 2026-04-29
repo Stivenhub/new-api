@@ -108,6 +108,104 @@ export const getTopicStats = async () => {
   return await API.get(`/api/chat/topics/stats`);
 };
 
+/**
+ * 获取用户可用模型列表
+ * @returns {Promise<string[]>}
+ */
+export const fetchUserModels = async () => {
+  try {
+    const res = await API.get('/api/user/models', { skipErrorHandler: true });
+    if (res.data.success && res.data.data) {
+      return res.data.data;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * 流式发送聊天消息（通过 relay 接口）
+ * @param {Object} params
+ * @param {string} params.model - 模型名称
+ * @param {Array} params.messages - 消息列表 [{role, content}]
+ * @param {function} params.onMessage - 收到文本块回调
+ * @param {function} params.onReasoning - 收到推理内容回调
+ * @param {function} params.onDone - 完成回调
+ * @param {function} params.onError - 错误回调
+ * @returns {Promise<void>}
+ */
+export const streamChatCompletion = async ({ model, messages, onMessage, onReasoning, onDone, onError }) => {
+  try {
+    const response = await fetch('/pg/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      onError?.(`HTTP ${response.status}: ${errText}`);
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta;
+          if (delta?.reasoning_content) {
+            onReasoning?.(delta.reasoning_content);
+          }
+          if (delta?.content) {
+            onMessage?.(delta.content);
+          }
+        } catch {
+          // 跳过解析失败的 chunk
+        }
+      }
+    }
+
+    // 处理 buffer 中剩余的数据
+    const lastLine = buffer.trim();
+    if (lastLine && lastLine.startsWith('data: ')) {
+      const data = lastLine.slice(6);
+      if (data !== '[DONE]') {
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta;
+          if (delta?.reasoning_content) onReasoning?.(delta.reasoning_content);
+          if (delta?.content) onMessage?.(delta.content);
+        } catch {}
+      }
+    }
+
+    onDone?.();
+  } catch (err) {
+    onError?.(err.message || '网络请求失败');
+  }
+};
+
 // ==================== 敏感词规则API ====================
 
 /**

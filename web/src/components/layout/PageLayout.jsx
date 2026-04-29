@@ -60,6 +60,7 @@ const PageLayout = () => {
     '/console/task',
     '/console/models',
     '/pricing',
+    '/console/chat',
     '/console/chat-history',
     '/console/sensitive-rules',
     '/console/sensitive-logs',

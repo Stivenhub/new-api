@@ -60,6 +60,9 @@ const PageLayout = () => {
     '/console/task',
     '/console/models',
     '/pricing',
+    '/console/chat-history',
+    '/console/sensitive-rules',
+    '/console/sensitive-logs',
   ];
 
   const shouldHideFooter = cardProPages.includes(location.pathname);

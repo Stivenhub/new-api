@@ -2,7 +2,7 @@
 Copyright (C) 2025 QuantumNous
 */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Table, Empty, Button } from '@douyinfe/semi-ui';
 import getSensitiveLogsColumns from './SensitiveLogsColumnDefs';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
@@ -17,7 +17,7 @@ const SensitiveLogsTable = ({
 }) => {
   const isMobile = useIsMobile();
 
-  const columns = getSensitiveLogsColumns(t, handleViewDetail);
+  const columns = useMemo(() => getSensitiveLogsColumns(t, handleViewDetail), [t, handleViewDetail]);
 
   if (!logs || logs.length === 0) {
     return (

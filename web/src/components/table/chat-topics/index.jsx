@@ -5,7 +5,7 @@ Copyright (C) 2025 QuantumNous
 import React from 'react';
 import CardPro from '../../common/ui/CardPro';
 import ChatTopicsTable from './ChatTopicsTable';
-import ChatMessagesModal from './ChatMessagesModal';
+import ChatMessagesModal from './modals/ChatMessagesModal';
 import { useChatHistoryData } from '../../../hooks/chat-history/useChatHistoryData';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { createCardProPagination } from '../../../helpers/utils';

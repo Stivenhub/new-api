@@ -69,7 +69,7 @@ const getSensitiveLogsColumns = (t, onViewDetail) => {
       render: (_, record) => (
         <Button
           theme='light'
-          onClick={() => onViewDetail(record.id)}
+          onClick={() => onViewDetail(record)}
           size='small'
         >
           {t('详情')}

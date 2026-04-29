@@ -540,10 +540,9 @@ const SiderBar = ({ onNavigate = () => {} }) => {
               />
             }
             onClick={toggleCollapsed}
-            iconOnly={collapsed}
             style={
               collapsed
-                ? { width: 36, height: 24, padding: 0 }
+                ? { width: 36, height: 24, padding: 0, minWidth: 36 }
                 : { padding: '4px 12px', width: '100%' }
             }
           >

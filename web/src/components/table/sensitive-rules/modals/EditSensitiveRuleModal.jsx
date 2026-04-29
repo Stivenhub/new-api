@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Select, Input, Switch, Space } from '@douyinfe/semi-ui';
+import { Modal, Select, Input, Switch, Space, Typography } from '@douyinfe/semi-ui';
 import { useTranslation } from 'react-i18next';
+
+const fieldStyle = {
+  marginBottom: 20,
+};
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: 6,
+  fontSize: 14,
+  fontWeight: 500,
+  color: 'var(--semi-color-text-0)',
+};
 
 const EditSensitiveRuleModal = ({ visible, onCancel, onSubmit, rule }) => {
   const { t } = useTranslation();
@@ -52,6 +64,10 @@ const EditSensitiveRuleModal = ({ visible, onCancel, onSubmit, rule }) => {
     onCancel();
   };
 
+  const updateField = (field, value) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+  };
+
   return (
     <Modal
       title={t('编辑规则')}
@@ -63,68 +79,91 @@ const EditSensitiveRuleModal = ({ visible, onCancel, onSubmit, rule }) => {
       cancelText={t('取消')}
       style={{ width: 520 }}
     >
-      <Form layout='vertical'>
-        <Form.Input
-          field='name'
-          label={t('规则名称')}
-          placeholder={t('请输入规则名称')}
-          value={formValues.name}
-          onChange={(v) => setFormValues({ ...formValues, name: v })}
-          required
-        />
-        <Form.Select
-          field='rule_type'
-          label={t('规则类型')}
-          value={formValues.rule_type}
-          onChange={(v) => setFormValues({ ...formValues, rule_type: v })}
-          style={{ width: '100%' }}
-        >
-          <Select.Option value='keyword'>{t('关键词')}</Select.Option>
-          <Select.Option value='regex'>{t('正则表达式')}</Select.Option>
-          <Select.Option value='pattern'>{t('模式')}</Select.Option>
-        </Form.Select>
-        <Form.Input
-          field='pattern'
-          label={t('匹配模式')}
-          placeholder={t('请输入敏感词或正则表达式')}
-          value={formValues.pattern}
-          onChange={(v) => setFormValues({ ...formValues, pattern: v })}
-          required
-        />
-        <Form.Select
-          field='action'
-          label={t('动作')}
-          value={formValues.action}
-          onChange={(v) => setFormValues({ ...formValues, action: v })}
-          style={{ width: '100%' }}
-        >
-          <Select.Option value='block'>{t('拦截')}</Select.Option>
-          <Select.Option value='replace'>{t('替换')}</Select.Option>
-          <Select.Option value='mask'>{t('脱敏')}</Select.Option>
-          <Select.Option value='warn'>{t('警告')}</Select.Option>
-        </Form.Select>
-        <Form.Input
-          field='replace_text'
-          label={t('替换文本')}
-          placeholder={t('默认: ***')}
-          value={formValues.replace_text}
-          onChange={(v) => setFormValues({ ...formValues, replace_text: v })}
-        />
-        <Space style={{ display: 'flex', alignItems: 'center' }}>
-          <span>{t('区分大小写')}</span>
-          <Switch
-            checked={formValues.case_sensitive}
-            onChange={(v) => setFormValues({ ...formValues, case_sensitive: v })}
+      <div style={{ padding: '4px 0' }}>
+        {/* 规则名称 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>
+            {t('规则名称')} <span style={{ color: 'var(--semi-color-danger)' }}>*</span>
+          </label>
+          <Input
+            placeholder={t('请输入规则名称')}
+            value={formValues.name}
+            onChange={(v) => updateField('name', v)}
           />
-        </Space>
-        <Form.Input
-          field='description'
-          label={t('描述')}
-          placeholder={t('可选）输入规则描述')}
-          value={formValues.description}
-          onChange={(v) => setFormValues({ ...formValues, description: v })}
-        />
-      </Form>
+        </div>
+
+        {/* 规则类型 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('规则类型')}</label>
+          <Select
+            value={formValues.rule_type}
+            onChange={(v) => updateField('rule_type', v)}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value='keyword'>{t('关键词')}</Select.Option>
+            <Select.Option value='regex'>{t('正则表达式')}</Select.Option>
+            <Select.Option value='pattern'>{t('模式')}</Select.Option>
+          </Select>
+        </div>
+
+        {/* 匹配模式 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>
+            {t('匹配模式')} <span style={{ color: 'var(--semi-color-danger)' }}>*</span>
+          </label>
+          <Input
+            placeholder={t('请输入敏感词或正则表达式')}
+            value={formValues.pattern}
+            onChange={(v) => updateField('pattern', v)}
+          />
+        </div>
+
+        {/* 动作 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('动作')}</label>
+          <Select
+            value={formValues.action}
+            onChange={(v) => updateField('action', v)}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value='block'>{t('拦截')}</Select.Option>
+            <Select.Option value='replace'>{t('替换')}</Select.Option>
+            <Select.Option value='mask'>{t('脱敏')}</Select.Option>
+            <Select.Option value='warn'>{t('警告')}</Select.Option>
+          </Select>
+        </div>
+
+        {/* 替换文本 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('替换文本')}</label>
+          <Input
+            placeholder={t('默认: ***')}
+            value={formValues.replace_text}
+            onChange={(v) => updateField('replace_text', v)}
+          />
+        </div>
+
+        {/* 区分大小写 */}
+        <div style={fieldStyle}>
+          <Space style={{ display: 'flex', alignItems: 'center' }}>
+            <Switch
+              checked={formValues.case_sensitive}
+              onChange={(v) => updateField('case_sensitive', v)}
+            />
+            <Typography.Text>{t('区分大小写')}</Typography.Text>
+          </Space>
+        </div>
+
+        {/* 描述 */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('描述')}</label>
+          <Input
+            placeholder={t('可选）输入规则描述')}
+            value={formValues.description}
+            onChange={(v) => updateField('description', v)}
+          />
+        </div>
+      </div>
     </Modal>
   );
 };

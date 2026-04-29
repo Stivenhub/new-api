@@ -2,7 +2,7 @@
 Copyright (C) 2025 QuantumNous
 */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   getSensitiveLogs, 
   getLogDetail,
@@ -69,23 +69,31 @@ export const useSensitiveLogsData = () => {
     }
   };
 
+  // 关闭详情弹窗
+  const handleCloseDetailModal = useCallback(() => {
+    setDetailModalVisible(false);
+    setCurrentLog(null);
+  }, []);
+
   // 查看日志详情
-  const handleViewDetail = async (logId) => {
+  const handleViewDetail = useCallback(async (record) => {
+    // 立即用表格已有数据显示弹窗
+    setCurrentLog(record);
+    setDetailModalVisible(true);
+
+    // 后台异步拉取完整详情
     try {
-      const response = await getLogDetail(logId);
+      const response = await getLogDetail(record.id);
       if (response.data.success) {
         setCurrentLog(response.data.data);
-        setDetailModalVisible(true);
-      } else {
-        showError(response.data.message || t('加载失败'));
       }
     } catch (error) {
-      showError(error.message || t('网络错误'));
+      // 静默处理，表格数据已足够展示
     }
-  };
+  }, []);
 
   // 清理旧日志
-  const handleCleanOldLogs = async (days) => {
+  const handleCleanOldLogs = useCallback(async (days) => {
     if (!window.confirm(t(`确定要清理${days}天前的日志吗?`))) {
       return;
     }
@@ -102,10 +110,10 @@ export const useSensitiveLogsData = () => {
     } catch (error) {
       showError(error.message || t('网络错误'));
     }
-  };
+  }, []);
 
   // 导出日志
-  const handleExportLogs = async () => {
+  const handleExportLogs = useCallback(async () => {
     try {
       const response = await exportLogs(filters);
       
@@ -122,26 +130,26 @@ export const useSensitiveLogsData = () => {
     } catch (error) {
       showError(error.message || t('导出失败'));
     }
-  };
+  }, []);
 
   // 筛选
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = useCallback((newFilters) => {
     setFilters({ ...filters, ...newFilters });
     setActivePage(1);
     loadLogs(1);
     loadStatistics();
-  };
+  }, [filters, loadLogs, loadStatistics]);
 
   // 分页变化
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     loadLogs(page);
-  };
+  }, [loadLogs]);
 
-  const handlePageSizeChange = (size) => {
+  const handlePageSizeChange = useCallback((size) => {
     setPageSize(size);
     setActivePage(1);
     loadLogs(1);
-  };
+  }, [loadLogs]);
 
   // 初始加载
   useEffect(() => {
@@ -169,5 +177,6 @@ export const useSensitiveLogsData = () => {
     handlePageChange,
     handlePageSizeChange,
     setDetailModalVisible,
+    handleCloseDetailModal,
   };
 };

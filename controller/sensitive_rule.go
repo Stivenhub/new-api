@@ -188,11 +188,12 @@ func CreateRule(c *gin.Context) {
 // @Security ApiKeyAuth
 type UpdateRuleRequest struct {
 	Name          string `json:"name" binding:"omitempty,max=255"`
+	RuleType      string `json:"rule_type" binding:"omitempty,oneof=keyword regex pattern"`
 	Pattern       string `json:"pattern" binding:"omitempty"`
 	Action        string `json:"action" binding:"omitempty,oneof=block replace warn mask"`
-	ReplaceText   string `json:"replace_text" binding:"omitempty,max=255"`
+	ReplaceText   *string `json:"replace_text"`
 	CaseSensitive *bool  `json:"case_sensitive"`
-	Description   string `json:"description" binding:"omitempty,max=1000"`
+	Description   *string `json:"description" binding:"omitempty,max=1000"`
 }
 
 func UpdateRule(c *gin.Context) {
@@ -240,24 +241,36 @@ func UpdateRule(c *gin.Context) {
 		rule.Action = req.Action
 		updateFields = append(updateFields, "action")
 	}
-	if req.ReplaceText != "" {
-		rule.ReplaceText = req.ReplaceText
+	if req.ReplaceText != nil {
+		rule.ReplaceText = *req.ReplaceText
 		updateFields = append(updateFields, "replace_text")
 	}
 	if req.CaseSensitive != nil {
 		rule.CaseSensitive = *req.CaseSensitive
 		updateFields = append(updateFields, "case_sensitive")
 	}
-	if req.Description != "" {
-		rule.Description = req.Description
+	if req.Description != nil {
+		rule.Description = *req.Description
 		updateFields = append(updateFields, "description")
+	}
+	if req.RuleType != "" {
+		rule.RuleType = req.RuleType
+		updateFields = append(updateFields, "rule_type")
 	}
 	
 	if len(updateFields) == 0 {
 		common.ApiErrorMsg(c, "无效的参数")
 		return
 	}
-	
+
+	// 验证正则表达式
+	if req.Pattern != "" && rule.RuleType == model.SensitiveRuleTypeRegex {
+		if _, err := common.CompileRegex(req.Pattern); err != nil {
+			common.ApiErrorMsg(c, "正则表达式格式错误: "+err.Error())
+			return
+		}
+	}
+
 	err = rule.Update(updateFields...)
 	if err != nil {
 		common.ApiError(c, err)

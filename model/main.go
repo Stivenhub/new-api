@@ -290,6 +290,12 @@ func migrateDB() error {
 		&ChatTopic{},      // 聊天话题
 		&ChatMessage{},    // 聊天消息
 		&SensitiveRule{},  // 敏感词规则
+		&Organization{},
+		&Department{},
+		&CustomRole{},
+		&UserOrganization{},
+		&UserDepartment{},
+		&UserCustomRole{},
 	)
 	if err != nil {
 		return err
@@ -341,6 +347,12 @@ func migrateDBFast() error {
 		{&ChatTopic{}, "ChatTopic"},
 		{&ChatMessage{}, "ChatMessage"},
 		{&SensitiveRule{}, "SensitiveRule"},
+		{&Organization{}, "Organization"},
+		{&Department{}, "Department"},
+		{&CustomRole{}, "CustomRole"},
+		{&UserOrganization{}, "UserOrganization"},
+		{&UserDepartment{}, "UserDepartment"},
+		{&UserCustomRole{}, "UserCustomRole"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))

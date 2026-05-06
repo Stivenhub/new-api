@@ -126,6 +126,8 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.PUT("/", controller.UpdateUser)
 				adminRoute.DELETE("/:id", controller.DeleteUser)
 				adminRoute.DELETE("/:id/reset_passkey", controller.AdminResetPasskey)
+				adminRoute.GET("/:id/associations", controller.GetUserAssociations)
+				adminRoute.PUT("/:id/associations", controller.UpdateUserAssociations)
 
 				// Admin 2FA routes
 				adminRoute.GET("/2fa/stats", controller.Admin2FAStats)
@@ -374,6 +376,52 @@ func SetApiRouter(router *gin.Engine) {
 			vendorRoute.POST("/", controller.CreateVendorMeta)
 			vendorRoute.PUT("/", controller.UpdateVendorMeta)
 			vendorRoute.DELETE("/:id", controller.DeleteVendorMeta)
+		}
+
+		// Organization management
+		orgRoute := apiRouter.Group("/organization")
+		orgRoute.Use(middleware.AdminAuth())
+		{
+			orgRoute.GET("/", controller.GetAllOrganizations)
+			orgRoute.GET("/search", controller.SearchOrganizations)
+			orgRoute.GET("/:id", controller.GetOrganization)
+			orgRoute.POST("/", controller.CreateOrganization)
+			orgRoute.PUT("/", controller.UpdateOrganization)
+			orgRoute.DELETE("/:id", controller.DeleteOrganization)
+			orgRoute.GET("/:id/users", controller.GetOrganizationUsers)
+			orgRoute.POST("/:id/users", controller.AddOrganizationUsers)
+			orgRoute.DELETE("/:id/users", controller.RemoveOrganizationUsers)
+		}
+
+		// Department management
+		deptRoute := apiRouter.Group("/department")
+		deptRoute.Use(middleware.AdminAuth())
+		{
+			deptRoute.GET("/", controller.GetAllDepartments)
+			deptRoute.GET("/tree", controller.GetDepartmentTree)
+			deptRoute.GET("/search", controller.SearchDepartments)
+			deptRoute.GET("/:id", controller.GetDepartment)
+			deptRoute.POST("/", controller.CreateDepartment)
+			deptRoute.PUT("/", controller.UpdateDepartment)
+			deptRoute.DELETE("/:id", controller.DeleteDepartment)
+			deptRoute.GET("/:id/users", controller.GetDepartmentUsers)
+			deptRoute.POST("/:id/users", controller.AddDepartmentUsers)
+			deptRoute.DELETE("/:id/users", controller.RemoveDepartmentUsers)
+		}
+
+		// Custom role management
+		customRoleRoute := apiRouter.Group("/custom-role")
+		customRoleRoute.Use(middleware.AdminAuth())
+		{
+			customRoleRoute.GET("/", controller.GetAllCustomRoles)
+			customRoleRoute.GET("/search", controller.SearchCustomRoles)
+			customRoleRoute.GET("/:id", controller.GetCustomRole)
+			customRoleRoute.POST("/", controller.CreateCustomRole)
+			customRoleRoute.PUT("/", controller.UpdateCustomRole)
+			customRoleRoute.DELETE("/:id", controller.DeleteCustomRole)
+			customRoleRoute.GET("/:id/users", controller.GetCustomRoleUsers)
+			customRoleRoute.POST("/:id/users", controller.AddCustomRoleUsers)
+			customRoleRoute.DELETE("/:id/users", controller.RemoveCustomRoleUsers)
 		}
 
 		modelsRoute := apiRouter.Group("/models")

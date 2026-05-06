@@ -75,6 +75,9 @@ import {
   Package,
   Server,
   CalendarClock,
+  Building2,
+  Network,
+  Shield,
 } from 'lucide-react';
 import {
   SiAtlassian,
@@ -147,6 +150,12 @@ export function getLucideIcon(key, selected = false) {
       return <CalendarClock {...commonProps} color={iconColor} />;
     case 'setting':
       return <Settings {...commonProps} color={iconColor} />;
+    case 'organization':
+      return <Building2 {...commonProps} color={iconColor} />;
+    case 'department':
+      return <Network {...commonProps} color={iconColor} />;
+    case 'role':
+      return <Shield {...commonProps} color={iconColor} />;
     default:
       return <CircleUser {...commonProps} color={iconColor} />;
   }
@@ -3181,3 +3190,4 @@ export function rehypeSplitWordsIntoSpans(options = {}) {
     });
   };
 }
+

@@ -53,6 +53,9 @@ const routerMap = {
   playground: '/console/playground',
   personal: '/console/personal',
   newChat: '/console/chat',
+  organization: '/console/organization',
+  department: '/console/department',
+  role: '/console/role',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
@@ -202,6 +205,24 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         text: t('用户管理'),
         itemKey: 'user',
         to: '/user',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('组织管理'),
+        itemKey: 'organization',
+        to: '/organization',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('部门管理'),
+        itemKey: 'department',
+        to: '/department',
+        className: isAdmin() ? '' : 'tableHiddle',
+      },
+      {
+        text: t('角色管理'),
+        itemKey: 'role',
+        to: '/role',
         className: isAdmin() ? '' : 'tableHiddle',
       },
       {

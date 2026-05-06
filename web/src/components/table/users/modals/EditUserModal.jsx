@@ -58,6 +58,8 @@ import {
 } from '@douyinfe/semi-icons';
 import UserBindingManagementModal from './UserBindingManagementModal';
 
+import { Select } from '@douyinfe/semi-ui';
+
 const { Text, Title } = Typography;
 
 const EditUserModal = (props) => {
@@ -76,6 +78,15 @@ const EditUserModal = (props) => {
   const [showAdjustQuotaRaw, setShowAdjustQuotaRaw] = useState(false);
   const [showQuotaInput, setShowQuotaInput] = useState(false);
   const [inputs, setInputs] = useState(null);
+
+  // 组织/部门/角色关联
+  const [orgOptions, setOrgOptions] = useState([]);
+  const [deptOptions, setDeptOptions] = useState([]);
+  const [roleOptions, setRoleOptions] = useState([]);
+  const [selectedOrgs, setSelectedOrgs] = useState([]);
+  const [selectedDepts, setSelectedDepts] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [associationsLoaded, setAssociationsLoaded] = useState(false);
 
   const isEdit = Boolean(userId);
 
@@ -100,6 +111,53 @@ const EditUserModal = (props) => {
     try {
       let res = await API.get(`/api/group/`);
       setGroupOptions(res.data.data.map((g) => ({ label: g, value: g })));
+    } catch (e) {
+      showError(e.message);
+    }
+  };
+
+  // 加载组织/部门/角色选项
+  const fetchAssocOptions = async () => {
+    try {
+      const [orgRes, deptRes, roleRes] = await Promise.all([
+        API.get('/api/organization/?p=0&page_size=1000'),
+        API.get('/api/department/?p=0&page_size=1000'),
+        API.get('/api/custom-role/?p=0&page_size=1000'),
+      ]);
+      if (orgRes.data.success)
+        setOrgOptions((orgRes.data.data.items || []).map((o) => ({ label: o.name, value: o.id })));
+      if (deptRes.data.success)
+        setDeptOptions((deptRes.data.data.items || []).map((d) => ({ label: d.name, value: d.id })));
+      if (roleRes.data.success)
+        setRoleOptions((roleRes.data.data.items || []).map((r) => ({ label: r.name, value: r.id })));
+    } catch (e) {
+      // 静默处理
+    }
+  };
+
+  // 加载用户当前关联
+  const loadUserAssociations = async (uid) => {
+    try {
+      const res = await API.get(`/api/user/${uid}/associations`);
+      if (res.data.success && res.data.data) {
+        setSelectedOrgs(res.data.data.organization_ids || []);
+        setSelectedDepts(res.data.data.department_ids || []);
+        setSelectedRoles(res.data.data.custom_role_ids || []);
+      }
+    } catch (e) {
+      // 静默处理
+    }
+    setAssociationsLoaded(true);
+  };
+
+  // 保存用户关联
+  const saveAssociations = async (uid) => {
+    try {
+      await API.put(`/api/user/${uid}/associations`, {
+        organization_ids: selectedOrgs,
+        department_ids: selectedDepts,
+        custom_role_ids: selectedRoles,
+      });
     } catch (e) {
       showError(e.message);
     }
@@ -132,8 +190,13 @@ const EditUserModal = (props) => {
 
   useEffect(() => {
     loadUser();
-    if (userId) fetchGroups();
+    if (userId) {
+      fetchGroups();
+      fetchAssocOptions();
+      loadUserAssociations(userId);
+    }
     setBindingModalVisible(false);
+    setAssociationsLoaded(false);
   }, [props.editingUser.id]);
 
   const openBindingModal = () => {
@@ -157,6 +220,9 @@ const EditUserModal = (props) => {
     const res = await API.put(url, payload);
     const { success, message } = res.data;
     if (success) {
+      if (userId) {
+        await saveAssociations(userId);
+      }
       showSuccess(t('用户信息更新成功！'));
       props.refresh();
       props.handleClose();
@@ -408,6 +474,76 @@ const EditUserModal = (props) => {
                             placeholder={t('请输入额度')}
                             style={{ width: '100%' }}
                             readonly
+                          />
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+                )}
+
+                {/* 组织角色关联 */}
+                {userId && associationsLoaded && (
+                  <Card className='!rounded-2xl shadow-sm border-0'>
+                    <div className='flex items-center mb-2'>
+                      <Avatar
+                        size='small'
+                        color='orange'
+                        className='mr-2 shadow-md'
+                      >
+                        <IconUserGroup size={16} />
+                      </Avatar>
+                      <div>
+                        <Text className='text-lg font-medium'>
+                          {t('组织角色')}
+                        </Text>
+                        <div className='text-xs text-gray-600'>
+                          {t('用户的组织、部门和角色配置')}
+                        </div>
+                      </div>
+                    </div>
+                    <Row gutter={12}>
+                      <Col span={24}>
+                        <div className='mb-3'>
+                          <Text className='text-sm font-medium mb-1 block'>{t('所属组织')}</Text>
+                          <Select
+                            multiple
+                            filter
+                            placeholder={t('选择组织')}
+                            style={{ width: '100%' }}
+                            value={selectedOrgs}
+                            onChange={setSelectedOrgs}
+                            optionList={orgOptions}
+                            maxTagCount={3}
+                          />
+                        </div>
+                      </Col>
+                      <Col span={24}>
+                        <div className='mb-3'>
+                          <Text className='text-sm font-medium mb-1 block'>{t('所属部门')}</Text>
+                          <Select
+                            multiple
+                            filter
+                            placeholder={t('选择部门')}
+                            style={{ width: '100%' }}
+                            value={selectedDepts}
+                            onChange={setSelectedDepts}
+                            optionList={deptOptions}
+                            maxTagCount={3}
+                          />
+                        </div>
+                      </Col>
+                      <Col span={24}>
+                        <div className='mb-3'>
+                          <Text className='text-sm font-medium mb-1 block'>{t('所属角色')}</Text>
+                          <Select
+                            multiple
+                            filter
+                            placeholder={t('选择角色')}
+                            style={{ width: '100%' }}
+                            value={selectedRoles}
+                            onChange={setSelectedRoles}
+                            optionList={roleOptions}
+                            maxTagCount={3}
                           />
                         </div>
                       </Col>
